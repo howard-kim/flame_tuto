@@ -1,125 +1,144 @@
+import 'package:flame/components.dart';
+import 'package:flame/events.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  print('load the game widgets');
+  runApp(GameWidget(game: MyGame()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyGame extends FlameGame {
+  SpriteComponent man = SpriteComponent();
+  SpriteComponent girl = SpriteComponent();
+  SpriteComponent background = SpriteComponent();
+  SpriteComponent background2 = SpriteComponent();
+  DialogButton dialogButton = DialogButton();
+  Vector2 buttonSize = Vector2(50.0, 50.0);
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+  final double characterSize = 200.0;
+  bool turnAway = false;
+  int dialogLevel = 0;
+  int sceneLevel = 1;
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  TextPaint dialogTextPaint = TextPaint(
+      style: const TextStyle(fontSize: 36), textDirection: TextDirection.ltr);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+  Future<void> onLoad() async {
+    super.onLoad();
+    final screenWidth = size[0];
+    final screenHeight = size[1];
+    final textBoxHeight = 100;
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+    (background2
+      ..sprite = await loadSprite('background2.png')
+      ..size = size);
+    //load background
+    add(background
+      ..sprite = await loadSprite('background.jpg')
+      ..size = Vector2(size[0], size[1] - 100));
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+    //load girl
+    girl
+      ..sprite = await loadSprite('girl.png')
+      ..size = Vector2(characterSize, characterSize)
+      ..y = screenHeight - characterSize - textBoxHeight
+      // ..x = characterSize
+      ..anchor = Anchor.topCenter;
+    add(girl);
+    // load man
+    man
+      ..sprite = await loadSprite('man.png')
+      ..size = Vector2(characterSize, characterSize)
+      ..y = screenHeight - characterSize - textBoxHeight
+      ..x = screenWidth - characterSize
+      ..anchor = Anchor.topCenter
+      ..flipHorizontally();
+    add(man);
+
+    dialogButton
+      ..sprite = await loadSprite('next_button.png')
+      ..size = buttonSize
+      ..position =
+          Vector2(size[0] - buttonSize[0] - 10, size[1] - buttonSize[1] - 10);
+    add(dialogButton);
   }
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+  void update(double dt) {
+    super.update(dt);
+    if (girl.x < size[0] / 2 - 100) {
+      girl.x += 50 * dt;
+      if (girl.x > 50 && dialogLevel == 0) {
+        dialogLevel = 1;
+      }
+      if (girl.x > 150 && dialogLevel == 1) {
+        dialogLevel = 2;
+      }
+    } else if (turnAway == false && sceneLevel == 1) {
+      print('turnAway');
+      man.flipHorizontally();
+      turnAway = true;
+      if (dialogLevel == 2) {
+        dialogLevel = 3;
+      }
+    }
+    if (man.x > size[0] / 2 - 50) {
+      man.x -= 50 * dt;
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    switch (dialogLevel) {
+      case 1:
+        dialogTextPaint.render(
+            canvas,
+            'Keiko: Ken, Don\'t'
+            ' go... You\'ll die',
+            Vector2(10, size[1] - 100.0));
+        break;
+      case 2:
+        dialogTextPaint.render(canvas, 'Ken: I must fight for out village.',
+            Vector2(10, size[1] - 100.0));
+        break;
+      case 3:
+        dialogTextPaint.render(canvas, 'Keiko: What about the baby?',
+            Vector2(10, size[1] - 100.0));
+        add(dialogButton);
+        break;
+    }
+    switch (dialogButton.scene2Level) {
+      case 1:
+        sceneLevel = 2;
+        canvas.drawRect(Rect.fromLTWH(0, size[1] - 100, size[0] - 60, 100),
+            Paint()..color = Colors.black);
+        dialogTextPaint.render(canvas, 'Keiko: Child? I did not know',
+            Vector2(10, size[1] - 100.0));
+        print('rendered');
+        if (turnAway) {
+          man.flipHorizontally();
+          turnAway = false;
+        }
+        break;
+    }
+  }
+}
+
+class DialogButton extends SpriteComponent with TapCallbacks {
+  int scene2Level = 0;
+  @override
+  bool onTapDown(TapDownEvent event) {
+    try {
+      print('move to next scree');
+      scene2Level = 1;
+
+      return true;
+    } catch (error) {
+      print(error);
+      return false;
+    }
   }
 }
